@@ -2,9 +2,7 @@ package ru.Securuzin.PassManager.model;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
@@ -13,6 +11,8 @@ import java.time.LocalDateTime;
 @Table(name = "audit_logs")
 @Data
 @NoArgsConstructor
+@Getter
+@Setter
 @AllArgsConstructor
 public class AuditLog {
     @Id
@@ -38,5 +38,48 @@ public class AuditLog {
         this.user = user;
         this.passwordEntry = passwordEntry;
         this.action = action;
+    }
+
+    public AuditLog() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public PasswordEntry getPasswordEntry() {
+        return passwordEntry;
+    }
+
+    public void setPasswordEntry(PasswordEntry passwordEntry) {
+        this.passwordEntry = passwordEntry;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
     }
 }
