@@ -6,15 +6,16 @@ public class CreatePasswordRequest {
     private String password;
     private String category;
     private String notes;
-    private String user;
+    private String username;
 
-    public CreatePasswordRequest(String title, String url, String password, String category, String notes, String user) {
+
+    public CreatePasswordRequest(String title, String url, String password, String category, String notes, String username) {
         this.title = title;
         this.url = url;
         this.password = password;
         this.category = category;
         this.notes = notes;
-        this.user = user;
+        this.username = username;
     }
 
     public CreatePasswordRequest() {
@@ -60,11 +61,11 @@ public class CreatePasswordRequest {
         this.notes = notes;
     }
 
-    public String getUser() {
-        return user;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUser(String user) {
-        this.user = user;
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

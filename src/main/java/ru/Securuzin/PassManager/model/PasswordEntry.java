@@ -19,7 +19,7 @@ import java.util.List;
 public class PasswordEntry {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinTable(name = "user_id")
@@ -43,6 +43,10 @@ public class PasswordEntry {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    private String username;
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+
     @OneToMany(mappedBy = "passwordEntry", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditLog> auditLogs = new ArrayList<>();
 
@@ -51,11 +55,11 @@ public class PasswordEntry {
     }
 
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
