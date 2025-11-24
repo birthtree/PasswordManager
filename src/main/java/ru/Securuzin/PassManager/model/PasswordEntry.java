@@ -22,25 +22,29 @@ public class PasswordEntry {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinTable(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)  // явно указываем колонку
     private User user;
+
 
     private String url;
 
     private String title;
 
+    @Column(name = "encrypted_password")  // ← должно совпадать с БД
     private String encryptedPassword;
 
     private String category;
 
     private String notes;
-
+    @Column(name = "last_breach_check")
     private LocalDateTime lastBreachCheck;
 
     @CreationTimestamp
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     private String username;
