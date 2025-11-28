@@ -9,6 +9,8 @@ import ru.Securuzin.PassManager.dto.Password.CreatePasswordRequest;
 import ru.Securuzin.PassManager.dto.Password.PasswordEntryResponse;
 import ru.Securuzin.PassManager.dto.Password.UpdatePasswordRequest;
 import ru.Securuzin.PassManager.security.UserDetailsImpl;
+import ru.Securuzin.PassManager.services.AuditLogService;
+import ru.Securuzin.PassManager.services.ExportService;
 import ru.Securuzin.PassManager.services.PasswordEntryService;
 
 import java.util.List;
@@ -18,12 +20,29 @@ import java.util.List;
 public class PasswordEntryController {
 
     private final PasswordEntryService passwordEntryService;
-
+    private final ExportService exportService;
+    private final AuditLogService auditLogService;
     @Autowired
-    public PasswordEntryController(PasswordEntryService passwordEntryService) {
+    public PasswordEntryController(PasswordEntryService passwordEntryService, ExportService exportService, AuditLogService auditLogService) {
         this.passwordEntryService = passwordEntryService;
+        this.exportService = exportService;
+        this.auditLogService = auditLogService;
     }
+    @GetMapping("/search")
+    public ResponseEntity<?> searchPasswords(@RequestParam String q) {
+        try {
+            if (q == null || q.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Параметр поиска 'q' не может быть пустым");
+            }
 
+            Long userId = getUserIdFromAuth();
+            List<PasswordEntryResponse> results = passwordEntryService.searchPasswords(q, userId);
+
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Ошибка поиска: " + e.getMessage());
+        }
+    }
 
     @PostMapping
     public ResponseEntity<?> createPassword(@RequestBody CreatePasswordRequest request) throws Exception {
@@ -85,5 +104,42 @@ public class PasswordEntryController {
     private Long getUserIdFromAuth() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return (Long) authentication.getDetails();
+    }
+    @GetMapping("/export/json")
+    public ResponseEntity<?> exportJSON() {
+        try {
+            Long userId = getUserIdFromAuth();
+            String jsonContent = exportService.exportToJSON(userId);
+
+            auditLogService.logUserAction(userId, "EXPORT_JSON");
+
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=passwords.json")
+                    .header("Content-Type", "application/json; charset=UTF-8")
+                    .body(jsonContent);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Ошибка экспорта: " + e.getMessage());
+        }
+    }
+
+    /**
+     * GET /api/passwords/export/csv
+     * Скачать все пароли в CSV
+     */
+    @GetMapping("/export/csv")
+    public ResponseEntity<?> exportCSV() {
+        try {
+            Long userId = getUserIdFromAuth();
+            String csvContent = exportService.exportToCSV(userId);
+
+            auditLogService.logUserAction(userId, "EXPORT_CSV");
+
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=passwords.csv")
+                    .header("Content-Type", "text/csv; charset=UTF-8")
+                    .body(csvContent);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Ошибка экспорта: " + e.getMessage());
+        }
     }
 }

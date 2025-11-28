@@ -1,6 +1,7 @@
 package ru.Securuzin.PassManager.model;
 
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -21,10 +22,12 @@ public class AuditLog {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "password_entry_id")
+    @JsonBackReference
     private PasswordEntry passwordEntry;
 
     @Column(nullable = false, length = 50)

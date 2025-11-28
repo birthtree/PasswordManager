@@ -14,18 +14,21 @@ import ru.Securuzin.PassManager.util.User.UserNotFound;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PasswordEntryService {
     private final PasswordEntryRepository passwordEntryRepository;
     private final EncryptionService encryptionService;
     private final UserRepository userRepository;
+    private final AuditLogService auditLogService;
     @Autowired
     public PasswordEntryService(PasswordEntryRepository passwordEntryRepository,
-                                EncryptionService encryptionService, UserRepository userRepository) {
+                                EncryptionService encryptionService, UserRepository userRepository, AuditLogService auditLogService) {
         this.passwordEntryRepository = passwordEntryRepository;
         this.encryptionService = encryptionService;
         this.userRepository = userRepository;
+        this.auditLogService = auditLogService;
     }
 
     public PasswordEntryResponse createPasswordEntry(CreatePasswordRequest request, Long userId) throws Exception {
@@ -40,6 +43,7 @@ public class PasswordEntryService {
         passwordEntry.setUser(user);
         passwordEntry.setUsername(request.getUsername());
         PasswordEntry saved = passwordEntryRepository.save(passwordEntry);
+        auditLogService.logAction(userId, saved, "CREATE");
         return new PasswordEntryResponse.Builder()
                 .id(saved.getId())
                 .title(saved.getTitle())
@@ -71,6 +75,7 @@ public class PasswordEntryService {
                     .build();
             passwordEntriesResponse.add(response);
         }
+        auditLogService.logUserAction(userId, "VIEW_ALL");
         return passwordEntriesResponse;
     }
 
@@ -80,7 +85,7 @@ public class PasswordEntryService {
                 .orElseThrow(() -> new RuntimeException("Запись не найдена или доступ запрещён"));
 
         String decryptedPassword = encryptionService.decrypt(passwordEntry.getEncryptedPassword());
-
+        auditLogService.logAction(userId, passwordEntry, "VIEW");
         return new PasswordEntryResponse.Builder()
                 .id(passwordEntry.getId())
                 .title(passwordEntry.getTitle())
@@ -120,7 +125,7 @@ public class PasswordEntryService {
         }
         PasswordEntry saved = passwordEntryRepository.save(passwordEntry);
         String decryptedPassword = encryptionService.decrypt(saved.getEncryptedPassword());
-
+        auditLogService.logAction(userId, saved, "UPDATE");
         return new PasswordEntryResponse.Builder()
                 .id(saved.getId())
                 .title(saved.getTitle())
@@ -137,8 +142,38 @@ public class PasswordEntryService {
     public void deletePassword(Long id, Long userId) {
         PasswordEntry passwordEntry = passwordEntryRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new RuntimeException("Запись не найдена или доступ запрещён"));
+        auditLogService.logAction(userId, passwordEntry, "DELETE");
         passwordEntryRepository.delete(passwordEntry);
     }
 
+    public List<PasswordEntryResponse> searchPasswords(String query, Long userId) throws Exception {
+        // Логирование
+        auditLogService.logUserAction(userId, "SEARCH: " + query);
+
+        // Поиск в БД
+        List<PasswordEntry> results = passwordEntryRepository.searchPasswords(userId, query);
+
+        // Преобразование в Response и расшифровка
+        return results.stream()
+                .map(entry -> {
+                    try {
+                        String decryptedPassword = encryptionService.decrypt(entry.getEncryptedPassword());
+                        return new PasswordEntryResponse.Builder()
+                                .id(entry.getId())
+                                .title(entry.getTitle())
+                                .url(entry.getUrl())
+                                .username(entry.getUsername())
+                                .password(decryptedPassword)
+                                .category(entry.getCategory())
+                                .notes(entry.getNotes())
+                                .createdAt(entry.getCreatedAt())
+                                .updatedAt(entry.getUpdatedAt())
+                                .build();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Ошибка расшифровки", e);
+                    }
+                })
+                .collect(Collectors.toList());
+    }
 
 }
